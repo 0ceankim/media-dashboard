@@ -84,7 +84,7 @@ function createKpiCard(label, value, wowPct) {
   const color = pct >= 0 ? '#4ade80' : '#f87171';
   return '<div class="kpi-card"><div class="label">'+label+'</div><div class="value">'+fmt(value)+'원</div><div class="wow" style="color:'+color+'">'+arrow+' '+sign+wowPct+'%</div><div class="sub">vs 전주</div></div>';
 }
-let kpiHtml = createKpiCard('잼팟 & 한게임 매체비', totalLast, prevWeek ? calcWow(totalLast, totalPrev) : '0.0');
+let kpiHtml = createKpiCard('잼팟 & NHN', totalLast, prevWeek ? calcWow(totalLast, totalPrev) : '0.0');
 companyNames.forEach(name => {
   const curr = weekTotal(companies[name], lastWeek);
   const prev = prevWeek ? weekTotal(companies[name], prevWeek) : curr;
