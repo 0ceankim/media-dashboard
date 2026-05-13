@@ -1,0 +1,288 @@
+﻿<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>매체비 주간 대시보드</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+  <script src="data.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Nanum Gothic', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #e0e0e0;
+      padding: 32px;
+      min-height: 100vh;
+    }
+    .dashboard-header { text-align: center; margin-bottom: 40px; }
+    .dashboard-header h1 { font-size: 32px; font-weight: 800; color: #fff; }
+    .dashboard-header p { font-size: 14px; color: #8892b0; margin-top: 8px; }
+
+    .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+    .kpi-card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+    .kpi-card .label { font-size: 11px; color: #8892b0; text-transform: uppercase; letter-spacing: 1px; }
+    .kpi-card .value { font-size: 26px; font-weight: 800; margin: 8px 0 4px; color: #fff; }
+    .kpi-card .wow { font-size: 14px; font-weight: 700; }
+    .kpi-card .sub { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+    .section { margin-bottom: 32px; }
+    .card {
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 16px;
+      padding: 24px;
+    }
+    .card h2 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 16px; }
+    .chart-wrapper { position: relative; height: 300px; }
+    .chart-wrapper.tall { height: 350px; }
+    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 32px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    thead th { background: rgba(68,114,196,0.3); color: #fff; padding: 12px 16px; text-align: right; font-size: 12px; font-weight: 700; }
+    thead th:first-child { text-align: left; border-radius: 8px 0 0 0; }
+    thead th:last-child { border-radius: 0 8px 0 0; }
+    tbody td { padding: 10px 16px; text-align: right; font-size: 13px; border-bottom: 1px solid rgba(255,255,255,0.05); color: #ccc; }
+    tbody td:first-child { text-align: left; font-weight: 700; color: #fff; }
+    tbody tr:last-child td { font-weight: 800; color: #fff; background: rgba(255,255,255,0.03); }
+    tbody tr:hover td { background: rgba(255,255,255,0.05); }
+    .wow-up { color: #4ade80; font-weight: 700; }
+    .wow-down { color: #f87171; font-weight: 700; }
+
+    .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #4a5568; }
+  </style>
+</head>
+<body>
+
+<div class="dashboard-header">
+  <h1>매체비 주간 대시보드</h1>
+  <p id="headerSub"></p>
+</div>
+
+<div class="kpi-grid" id="kpiGrid"></div>
+
+<div class="section">
+  <div class="card">
+    <h2>주간 요약</h2>
+    <table>
+      <thead><tr><th>구분</th><th id="w1Header"></th><th id="w2Header"></th><th>WoW</th><th>일평균(최신주)</th></tr></thead>
+      <tbody id="summaryBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="section">
+  <div class="card">
+    <h2>일별 매체비 추이 (이중 축)</h2>
+    <div class="chart-wrapper tall"><canvas id="mainChart"></canvas></div>
+  </div>
+</div>
+
+<div class="chart-grid">
+  <div class="card">
+    <h2>요일별 평균 매체비</h2>
+    <div class="chart-wrapper"><canvas id="dowChart"></canvas></div>
+  </div>
+  <div class="card">
+    <h2>주간 비교</h2>
+    <div class="chart-wrapper"><canvas id="weeklyBar"></canvas></div>
+  </div>
+</div>
+
+<div class="footer">Last updated: <span id="updatedAt"></span></div>
+
+<script>
+// === data.js에서 로드된 DASHBOARD_DATA 사용 ===
+const D = DASHBOARD_DATA;
+const dates = D.dates;
+const companies = D.companies;
+const weeks = D.weeks;
+const companyNames = Object.keys(companies);
+
+// 유틸
+const sum = arr => arr.reduce((a,b) => a+b, 0);
+const fmt = n => n.toLocaleString('ko-KR');
+const calcWow = (curr, prev) => ((curr - prev) / prev * 100).toFixed(1);
+
+// 주차별 합계 계산
+function weekTotal(companyData, week) {
+  return sum(companyData.slice(week.start, week.end + 1));
+}
+
+// 헤더
+document.getElementById('headerSub').textContent = '데이터 기간: ' + D.meta.period + ' | 최종 업데이트: ' + D.meta.updatedAt;
+document.getElementById('updatedAt').textContent = D.meta.updatedAt;
+
+const lastWeek = weeks[weeks.length - 1];
+const prevWeek = weeks.length >= 2 ? weeks[weeks.length - 2] : null;
+
+// 주간 요약 헤더
+document.getElementById('w1Header').textContent = prevWeek ? prevWeek.label : '-';
+document.getElementById('w2Header').textContent = lastWeek.label;
+
+// === KPI 카드 생성 ===
+const kpiGrid = document.getElementById('kpiGrid');
+
+// 전체 합계
+let totalLast = 0, totalPrev = 0;
+companyNames.forEach(name => {
+  totalLast += weekTotal(companies[name], lastWeek);
+  if (prevWeek) totalPrev += weekTotal(companies[name], prevWeek);
+});
+
+function createKpiCard(label, value, wowPct) {
+  const pct = parseFloat(wowPct);
+  const arrow = pct >= 0 ? String.fromCharCode(9650) : String.fromCharCode(9660);
+  const sign = pct >= 0 ? '+' : '';
+  const color = pct >= 0 ? '#4ade80' : '#f87171';
+  return '<div class="kpi-card"><div class="label">'+label+'</div><div class="value">'+fmt(value)+'</div><div class="wow" style="color:'+color+'">'+arrow+' '+sign+wowPct+'%</div><div class="sub">vs 전주</div></div>';
+}
+
+let kpiHtml = createKpiCard('잼팟 & 한게임 매체비 (최신주)', totalLast, prevWeek ? calcWow(totalLast, totalPrev) : '0.0');
+companyNames.forEach(name => {
+  const curr = weekTotal(companies[name], lastWeek);
+  const prev = prevWeek ? weekTotal(companies[name], prevWeek) : curr;
+  kpiHtml += createKpiCard(name + ' (최신주)', curr, prevWeek ? calcWow(curr, prev) : '0.0');
+});
+kpiGrid.innerHTML = kpiHtml;
+
+// === 주간 요약 테이블 ===
+const tbody = document.getElementById('summaryBody');
+let totalRow = ['전체', 0, 0];
+companyNames.forEach(name => {
+  const curr = weekTotal(companies[name], lastWeek);
+  const prev = prevWeek ? weekTotal(companies[name], prevWeek) : 0;
+  const wowVal = prevWeek ? parseFloat(calcWow(curr, prev)) : 0;
+  const cls = wowVal >= 0 ? 'wow-up' : 'wow-down';
+  const sign = wowVal >= 0 ? '+' : '';
+  const dayCount = lastWeek.end - lastWeek.start + 1;
+  tbody.innerHTML += '<tr><td>'+name+'</td><td>'+fmt(prev)+'</td><td>'+fmt(curr)+'</td><td class="'+cls+'">'+sign+calcWow(curr,prev)+'%</td><td>'+fmt(Math.round(curr/dayCount))+'</td></tr>';
+  totalRow[1] += prev; totalRow[2] += curr;
+});
+const totalWow = prevWeek ? parseFloat(calcWow(totalRow[2], totalRow[1])) : 0;
+const totalCls = totalWow >= 0 ? 'wow-up' : 'wow-down';
+const totalSign = totalWow >= 0 ? '+' : '';
+const dayCount = lastWeek.end - lastWeek.start + 1;
+tbody.innerHTML += '<tr><td>전체</td><td>'+fmt(totalRow[1])+'</td><td>'+fmt(totalRow[2])+'</td><td class="'+totalCls+'">'+totalSign+calcWow(totalRow[2],totalRow[1])+'%</td><td>'+fmt(Math.round(totalRow[2]/dayCount))+'</td></tr>';
+
+// === 메인 차트 ===
+const colors = ['#60a5fa', '#fb923c', '#4ade80', '#a78bfa'];
+const datasets = companyNames.map((name, i) => ({
+  label: name,
+  data: companies[name],
+  borderColor: colors[i],
+  backgroundColor: colors[i].replace(')', ',0.08)').replace('rgb', 'rgba'),
+  borderWidth: 3,
+  pointRadius: 5,
+  pointBackgroundColor: colors[i],
+  pointHoverRadius: 8,
+  tension: 0.35,
+  fill: true,
+  yAxisID: i === 0 ? 'y' : 'y1'
+}));
+
+const annotations = {};
+weeks.forEach((w, i) => {
+  if (i > 0) {
+    annotations['divider'+i] = {
+      type: 'line', xMin: w.start - 0.5, xMax: w.start - 0.5,
+      borderColor: 'rgba(255,255,255,0.3)', borderWidth: 2, borderDash: [6,4],
+      label: { display: true, content: 'W'+i+' | W'+(i+1), position: 'start', color: '#8892b0', font: { size: 11 } }
+    };
+  }
+});
+
+// Y축 범위 계산
+function axisRange(data) {
+  const max = Math.max(...data);
+  const min = Math.min(...data);
+  return { min: Math.max(0, Math.floor(min * 0.9 / 100000) * 100000), max: Math.ceil(max * 1.05 / 100000) * 100000 };
+}
+
+const y0Range = axisRange(companies[companyNames[0]]);
+const y1Range = companyNames.length > 1 ? axisRange(companies[companyNames[1]]) : y0Range;
+
+new Chart(document.getElementById('mainChart'), {
+  type: 'line',
+  data: { labels: dates, datasets: datasets },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top', labels: { color: '#ccc', font: { size: 13, family: 'Nanum Gothic' }, padding: 16, usePointStyle: true } },
+      tooltip: { backgroundColor: 'rgba(20,20,40,0.95)', titleColor: '#fff', bodyColor: '#ccc', padding: 14, cornerRadius: 8, callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() + '원' } },
+      annotation: { annotations: annotations }
+    },
+    scales: {
+      x: { ticks: { color: '#8892b0', font: { size: 11, weight: 'bold' } }, grid: { color: 'rgba(255,255,255,0.03)' } },
+      y: { position: 'left', ticks: { color: colors[0], font: { size: 11, weight: 'bold' }, callback: v => (v/10000).toFixed(0)+'만' }, grid: { color: 'rgba(255,255,255,0.05)' }, title: { display: true, text: companyNames[0], color: colors[0], font: { size: 12, weight: 'bold' } }, min: y0Range.min, max: y0Range.max },
+      y1: { position: 'right', ticks: { color: colors[1] || colors[0], font: { size: 11, weight: 'bold' }, callback: v => (v/10000).toFixed(0)+'만' }, grid: { drawOnChartArea: false }, title: { display: true, text: companyNames[1] || '', color: colors[1] || colors[0], font: { size: 12, weight: 'bold' } }, min: y1Range.min, max: y1Range.max }
+    }
+  }
+});
+
+// === 요일별 평균 ===
+const dows = ['목','금','토','일','월','화','수'];
+const dowDatasets = companyNames.map((name, i) => {
+  const data = companies[name];
+  const avgByDow = dows.map((d, di) => {
+    let total = 0, count = 0;
+    for (let w = 0; w < weeks.length; w++) {
+      const idx = weeks[w].start + di;
+      if (idx <= weeks[w].end) { total += data[idx]; count++; }
+    }
+    return Math.round(total / count);
+  });
+  return { label: name, data: avgByDow, backgroundColor: colors[i].replace(')', ',0.7)').replace('#', 'rgba(').replace(/rgba\((.{6})/, function(m,hex){ const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16); return 'rgba('+r+','+g+','+b; }) || colors[i], borderRadius: 6 };
+});
+
+// 간단한 색상 변환
+const dowDs = companyNames.map((name, i) => {
+  const data = companies[name];
+  const avgByDow = dows.map((d, di) => {
+    let total = 0, count = 0;
+    weeks.forEach(w => { const idx = w.start + di; if (idx <= w.end) { total += data[idx]; count++; } });
+    return Math.round(total / count);
+  });
+  const bgColors = { 0: 'rgba(96,165,250,0.7)', 1: 'rgba(251,146,60,0.7)', 2: 'rgba(74,222,128,0.7)' };
+  return { label: name, data: avgByDow, backgroundColor: bgColors[i] || 'rgba(167,139,250,0.7)', borderRadius: 6 };
+});
+
+new Chart(document.getElementById('dowChart'), {
+  type: 'bar',
+  data: { labels: dows, datasets: dowDs },
+  options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { color: '#ccc', font: { size: 11 }, usePointStyle: true } }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() + '원' } } }, scales: { x: { ticks: { color: '#8892b0', font: { size: 12, weight: 'bold' } }, grid: { display: false } }, y: { ticks: { color: '#8892b0', callback: v => (v/10000).toFixed(0)+'만' }, grid: { color: 'rgba(255,255,255,0.05)' } } } }
+});
+
+// === 주간 비교 ===
+if (weeks.length >= 2) {
+  const barLabels = companyNames.concat(['전체']);
+  const w1Data = companyNames.map(name => weekTotal(companies[name], prevWeek));
+  w1Data.push(totalRow[1]);
+  const w2Data = companyNames.map(name => weekTotal(companies[name], lastWeek));
+  w2Data.push(totalRow[2]);
+
+  new Chart(document.getElementById('weeklyBar'), {
+    type: 'bar',
+    data: { labels: barLabels, datasets: [
+      { label: prevWeek.label, data: w1Data, backgroundColor: 'rgba(96,165,250,0.5)', borderRadius: 6 },
+      { label: lastWeek.label, data: w2Data, backgroundColor: 'rgba(74,222,128,0.6)', borderRadius: 6 }
+    ]},
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { position: 'top', labels: { color: '#ccc', font: { size: 11 }, usePointStyle: true } }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.x.toLocaleString() + '원' } } }, scales: { x: { ticks: { color: '#8892b0', callback: v => (v/10000).toFixed(0)+'만' }, grid: { color: 'rgba(255,255,255,0.05)' } }, y: { ticks: { color: '#ccc', font: { size: 12, weight: 'bold' } }, grid: { display: false } } } }
+  });
+}
+</script>
+</body>
+</html>
