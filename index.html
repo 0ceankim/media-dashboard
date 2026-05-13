@@ -77,7 +77,7 @@
   <div class="card">
     <h2>주간 요약</h2>
     <table>
-      <thead><tr><th>구분</th><th id="w1Header"></th><th id="w2Header"></th><th>WoW</th><th>일평균(최신주)</th></tr></thead>
+      <thead><tr><th>구분</th><th id="w1Header"></th><th id="w2Header"></th><th>WoW</th><th>일 평균</th></tr></thead>
       <tbody id="summaryBody"></tbody>
     </table>
   </div>
@@ -122,7 +122,7 @@ function weekTotal(companyData, week) {
 }
 
 // 헤더
-document.getElementById('headerSub').textContent = '데이터 기간: ' + D.meta.period + ' | 최종 업데이트: ' + D.meta.updatedAt;
+document.getElementById('headerSub').textContent = '기간: ' + D.meta.period + ' | 최종 업데이트: ' + D.meta.updatedAt;
 document.getElementById('updatedAt').textContent = D.meta.updatedAt;
 
 const lastWeek = weeks[weeks.length - 1];
@@ -150,11 +150,11 @@ function createKpiCard(label, value, wowPct) {
   return '<div class="kpi-card"><div class="label">'+label+'</div><div class="value">'+fmt(value)+'</div><div class="wow" style="color:'+color+'">'+arrow+' '+sign+wowPct+'%</div><div class="sub">vs 전주</div></div>';
 }
 
-let kpiHtml = createKpiCard('잼팟 & 한게임 매체비 (최신주)', totalLast, prevWeek ? calcWow(totalLast, totalPrev) : '0.0');
+let kpiHtml = createKpiCard('잼팟 & 한게임 매체비', totalLast, prevWeek ? calcWow(totalLast, totalPrev) : '0.0');
 companyNames.forEach(name => {
   const curr = weekTotal(companies[name], lastWeek);
   const prev = prevWeek ? weekTotal(companies[name], prevWeek) : curr;
-  kpiHtml += createKpiCard(name + ' (최신주)', curr, prevWeek ? calcWow(curr, prev) : '0.0');
+  kpiHtml += createKpiCard(name, curr, prevWeek ? calcWow(curr, prev) : '0.0');
 });
 kpiGrid.innerHTML = kpiHtml;
 
