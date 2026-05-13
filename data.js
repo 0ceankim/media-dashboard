@@ -20,7 +20,7 @@ const DASHBOARD_DATA = {
 
   // 주차 구분 (목~수 기준, 인덱스)
   weeks: [
-    { label: '4/23-4/29', start: 0, end: 6 },
-    { label: '4/30-5/06', start: 7, end: 13 }
+    { label: '4/23 ~ 4/29', start: 0, end: 6 },
+    { label: '4/30 ~ 5/06', start: 7, end: 13 }
   ]
 };
