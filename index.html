@@ -17,7 +17,7 @@
     .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
     .kpi-card { background: rgba(255,255,255,0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; text-align: center; transition: transform 0.2s; }
     .kpi-card:hover { transform: translateY(-4px); box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
-    .kpi-card .label { font-size: 11px; color: #8892b0; text-transform: uppercase; letter-spacing: 1px; }
+    .kpi-card .label { font-size: 11px; color: #ffffff; text-transform: uppercase; letter-spacing: 1px; }
     .kpi-card .value { font-size: 26px; font-weight: 800; margin: 8px 0 4px; color: #fff; }
     .kpi-card .wow { font-size: 14px; font-weight: 700; }
     .kpi-card .sub { font-size: 11px; color: #64748b; margin-top: 4px; }
@@ -103,10 +103,10 @@ companyNames.forEach(name => {
   const cls = w >= 0 ? 'wow-up' : 'wow-down';
   const s = w >= 0 ? '+' : '';
   const dayCount = lastWeek.end - lastWeek.start + 1;
-  tbody.innerHTML += '<tr><td>'+name+'</td><td>'+fmt(prev)+'원</td><td>'+fmt(curr)+'원</td><td class="'+cls+'">'+s+calcWow(curr,prev)+'%</td><td>'+fmt(Math.round(curr/dayCount))+'</td></tr>';
+  tbody.innerHTML += '<tr><td>'+name+'</td><td>'+fmt(prev)+'원</td><td>'+fmt(curr)+'원</td><td class="'+cls+'">'+s+calcWow(curr,prev)+'%</td><td>'+fmt(Math.round(curr/dayCount))+'원</td></tr>';
 });
 const tw = parseFloat(calcWow(tCurr, tPrev));
-tbody.innerHTML += '<tr><td>전체</td><td>'+fmt(tPrev)+'</td><td>'+fmt(tCurr)+'</td><td class="'+(tw>=0?'wow-up':'wow-down')+'">'+(tw>=0?'+':'')+calcWow(tCurr,tPrev)+'%</td><td>'+fmt(Math.round(tCurr/(lastWeek.end-lastWeek.start+1)))+'</td></tr>';
+tbody.innerHTML += '<tr><td>전체</td><td>'+fmt(tPrev)+'원</td><td>'+fmt(tCurr)+'원</td><td class="'+(tw>=0?'wow-up':'wow-down')+'">'+(tw>=0?'+':'')+calcWow(tCurr,tPrev)+'%</td><td>'+fmt(Math.round(tCurr/(lastWeek.end-lastWeek.start+1)))+'원</td></tr>';
 
 // 메인 차트 (선 그래프, 영역 채우기 없음)
 const colors = ['#60a5fa', '#fb923c', '#4ade80', '#a78bfa'];
