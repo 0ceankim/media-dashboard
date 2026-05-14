@@ -41,6 +41,18 @@
   </style>
 </head>
 <body>
+  
+  <div id="lockScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;">
+  <div style="text-align:center;padding:40px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px;backdrop-filter:blur(10px);">
+    <h2 style="color:#fff;font-family:'Nanum Gothic',sans-serif;margin-bottom:20px;font-size:20px;">Access Required</h2>
+    <input id="pwInput" type="password" placeholder="Password" onkeypress="if(event.key==='Enter')checkPw()" style="padding:12px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:14px;width:220px;outline:none;font-family:'Nanum Gothic',sans-serif;">
+    <br><br>
+    <button onclick="checkPw()" style="padding:10px 32px;border-radius:8px;border:none;background:#6366f1;color:#fff;font-size:14px;cursor:pointer;font-family:'Nanum Gothic',sans-serif;font-weight:700;">Enter</button>
+    <p id="pwError" style="color:#f87171;margin-top:12px;font-size:12px;display:none;">Incorrect password</p>
+  </div>
+</div>
+<div id="mainContent" style="display:none;">
+  
 <div class="dashboard-header">
   <h1>매체비 주간 대시보드</h1>
   <p id="headerSub"></p>
@@ -149,5 +161,20 @@ if (weeks.length >= 2) {
   new Chart(document.getElementById('weeklyBar'), { type: 'bar', data: { labels: labels, datasets: [ { label: prevWeek.label, data: w1D, backgroundColor: 'rgba(148,163,184,0.5)', borderRadius: 6 }, { label: lastWeek.label, data: w2D, backgroundColor: 'rgba(192,132,252,0.7)', borderRadius: 6 } ] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { position: 'top', labels: { color: '#ccc', font: { size: 11 }, usePointStyle: true } }, tooltip: { callbacks: { label: ctx => ctx.dataset.label+': '+ctx.parsed.x.toLocaleString()+'원' } } }, scales: { x: { ticks: { color: '#8892b0', callback: v => (v/10000).toFixed(0)+'만' }, grid: { color: 'rgba(255,255,255,0.05)' } }, y: { ticks: { color: '#ccc', font: { size: 12, weight: 'bold' } }, grid: { display: false } } } } });
 }
 </script>
+
+  </div>
+<script>
+function checkPw() {
+  var input = document.getElementById('pwInput').value;
+  if (input === 'reward123!') {
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+  } else {
+    document.getElementById('pwError').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+  }
+}
+</script>
+
 </body>
 </html>
