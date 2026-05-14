@@ -45,7 +45,10 @@
   <div id="lockScreen" style="position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;">
   <div style="text-align:center;padding:40px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:16px;backdrop-filter:blur(10px);">
     <h2 style="color:#fff;font-family:'Nanum Gothic',sans-serif;margin-bottom:20px;font-size:20px;">Access Required</h2>
-    <input id="pwInput" type="password" placeholder="Password" onkeypress="if(event.key==='Enter')checkPw()" style="padding:12px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:14px;width:220px;outline:none;font-family:'Nanum Gothic',sans-serif;">
+    <div style="position:relative;display:inline-block;">
+    <input id="pwInput" type="password" placeholder="Password" onkeypress="if(event.key==='Enter')checkPw()" style="padding:12px 40px 12px 20px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#fff;font-size:14px;width:220px;outline:none;font-family:'Nanum Gothic',sans-serif;">
+    <span onclick="togglePw()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;opacity:0.6;" title="비밀번호 표시/숨기기">&#128065;</span>
+    </div>
     <br><br>
     <button onclick="checkPw()" style="padding:10px 32px;border-radius:8px;border:none;background:#6366f1;color:#fff;font-size:14px;cursor:pointer;font-family:'Nanum Gothic',sans-serif;font-weight:700;">Enter</button>
     <p id="pwError" style="color:#f87171;margin-top:12px;font-size:12px;display:none;">Incorrect password</p>
@@ -164,8 +167,10 @@ if (weeks.length >= 2) {
 
   </div>
 <script>
-function checkPw() {
-  var input = document.getElementById('pwInput').value;
+function togglePw() {
+  var input = document.getElementById('pwInput');
+  input.type = input.type === 'password' ? 'text' : 'password';
+  }
   if (input === 'reward123') {
     document.getElementById('lockScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
