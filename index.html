@@ -167,6 +167,7 @@ if (weeks.length >= 2) {
 
   </div>
 <script>
+<script>
 function togglePw() {
   var input = document.getElementById('pwInput');
   input.type = input.type === 'password' ? 'text' : 'password';
@@ -174,12 +175,18 @@ function togglePw() {
 function checkPw() {
   var input = document.getElementById('pwInput').value;
   if (input === 'reward123') {
+    sessionStorage.setItem('authenticated', 'true');
     document.getElementById('lockScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
   } else {
     document.getElementById('pwError').style.display = 'block';
     document.getElementById('pwInput').value = '';
   }
+}
+// 이미 인증된 경우 자동 통과
+if (sessionStorage.getItem('authenticated') === 'true') {
+  document.getElementById('lockScreen').style.display = 'none';
+  document.getElementById('mainContent').style.display = 'block';
 }
 </script>
 
