@@ -170,7 +170,9 @@ if (weeks.length >= 2) {
 function togglePw() {
   var input = document.getElementById('pwInput');
   input.type = input.type === 'password' ? 'text' : 'password';
-  }
+}
+function checkPw() {
+  var input = document.getElementById('pwInput').value;
   if (input === 'reward123') {
     document.getElementById('lockScreen').style.display = 'none';
     document.getElementById('mainContent').style.display = 'block';
