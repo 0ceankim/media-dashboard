@@ -19,8 +19,8 @@
     .kpi-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; text-align: center; }
     .kpi-box .label { font-size: 14px; color: #d1d5db; font-weight: 700; }
     .kpi-box .value { font-size: 26px; font-weight: 800; color: #fff; display: inline; }
-    .clear-data { display:inline-block; margin-left:8px; width:18px; height:18px; line-height:16px; text-align:center; border-radius:50%; background:rgba(248,113,113,0.15); color:#f87171; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; vertical-align:middle; }
-    .clear-data:hover { background:rgba(248,113,113,0.3); transform:scale(1.1); }
+    .clear-data { display:inline-flex; align-items:center; justify-content:center; margin-left:8px; width:18px; height:18px; border-radius:50%; background:rgba(248,113,113,0.15); color:#f87171; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; vertical-align:middle; }
+    .clear-data:hover { background:rgba(248,113,113,0.3); transform:scale(1.2); }
     .kpi-box .wow { font-size: 16px; font-weight: 700; }
     .kpi-box .value.up { color: #4ade80 !important; }
     .kpi-box .value.down { color: #f87171 !important; }
@@ -68,7 +68,7 @@
     .status-msg { margin-top: 12px; font-size: 12px; color: #4ade80; display: none; }
     body.light { background: #f8fafc; color: #1e293b; }
     body.light .kpi-box { background: #fff; border-color: #e2e8f0; }
-    body.light .kpi-box .label { color: #64748b; }
+    body.light .kpi-box .label { color: #000; }
     body.light .kpi-box .value { color: #1e293b; }
     body.light .card { background: #fff; border-color: #e2e8f0; }
     body.light .card h3 { color: #000; }
@@ -156,13 +156,30 @@
   <div class="card"><table class="table-top30" style="table-layout:fixed"><colgroup><col style="width:100px"><col><col style="width:180px"><col style="width:280px"><col style="width:280px"><col style="width:280px"><col style="width:180px"></colgroup><thead><tr><th>#</th><th>매체</th><th>OS</th><th>합계</th><th>W1</th><th>W2</th><th>WoW</th></tr></thead><tbody id="top30Body"></tbody></table></div>
 </div>
 
-<div style="text-align:center; margin-top:60px; font-size:14px; color:#64748b;">ocean.kim</div>
+<div style="text-align:center; margin-top:60px; font-size:14px; color:#64748b;">Ocean.Kim</div>
 <script>
 // === 데이터 삭제 ===
 function clearDashboardData() {
-  if (!confirm('업로드된 데이터를 삭제하시겠습니까?\n두 페이지 모두에서 데이터가 사라집니다.')) return;
-  localStorage.removeItem('media_dashboard_raw');
-  location.reload();
+  showConfirmModal('업로드된 데이터를 삭제하시겠습니까?', '두 페이지 모두에서 데이터가 사라집니다.', function() {
+    localStorage.removeItem('media_dashboard_raw');
+    location.reload();
+  });
+}
+
+function showConfirmModal(title, msg, onConfirm) {
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:32px;width:360px;max-width:90%;text-align:center;';
+  if (document.body.classList.contains('light')) box.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:32px;width:360px;max-width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.15);';
+  var titleColor = document.body.classList.contains('light') ? '#1e293b' : '#fff';
+  var msgColor = document.body.classList.contains('light') ? '#64748b' : '#8892b0';
+  box.innerHTML = '<div style="font-size:16px;font-weight:800;color:' + titleColor + ';margin-bottom:8px;">' + title + '</div><div style="font-size:13px;color:' + msgColor + ';margin-bottom:24px;">' + msg + '</div><div style="display:flex;gap:12px;justify-content:center;"><button id="cfmCancel" style="padding:10px 24px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;">취소</button><button id="cfmOk" style="padding:10px 24px;border-radius:8px;border:none;background:#ef4444;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">삭제</button></div>';
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  document.getElementById('cfmCancel').onclick = function() { document.body.removeChild(overlay); };
+  document.getElementById('cfmOk').onclick = function() { document.body.removeChild(overlay); onConfirm(); };
+  overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
 }
 
 function toggleTheme() {
@@ -224,7 +241,10 @@ function processFile() {
   reader.readAsArrayBuffer(uploadedFile);
 }
 
-function scrollToTop30(name) {
+var lastScrollSource = null;
+
+function scrollToTop30(name, sourceEl) {
+  if (sourceEl) lastScrollSource = sourceEl;
   var rows = document.querySelectorAll('#top30Body tr');
   for (var i = 0; i < rows.length; i++) {
     var nameCell = rows[i].querySelector('td.name');
@@ -234,6 +254,18 @@ function scrollToTop30(name) {
       (function(row) { setTimeout(function() { row.classList.remove('highlighted'); }, 5000); })(rows[i]);
       return;
     }
+  }
+}
+
+function scrollBackToSource() {
+  if (lastScrollSource) {
+    lastScrollSource.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    var row = lastScrollSource.closest('tr');
+    if (row) {
+      row.classList.add('highlighted');
+      setTimeout(function() { row.classList.remove('highlighted'); }, 5000);
+    }
+    lastScrollSource = null;
   }
 }
 
@@ -258,7 +290,7 @@ function renderAllMediaDashboard(D) {
     data.forEach(function(m, i) {
       var s = m.diff >= 0 ? '+' : '';
       var c = m.diff >= 0 ? 'up' : 'down';
-      tbody.innerHTML += '<tr><td><span class="rank">' + (i + 1) + '</span></td><td class="name" onclick="scrollToTop30(this.textContent)">' + m.name + '</td><td>' + m.os + '</td><td>' + s + m.pct + '%</td><td class="highlight-' + c + '">' + s + fmt(m.diff) + '원</td></tr>';
+      tbody.innerHTML += '<tr><td><span class="rank">' + (i + 1) + '</span></td><td class="name" onclick="scrollToTop30(this.textContent, this)">' + m.name + '</td><td>' + m.os + '</td><td>' + s + m.pct + '%</td><td class="highlight-' + c + '">' + s + fmt(m.diff) + '원</td></tr>';
     });
   }
   function renderPctTable(id, data) {
@@ -267,7 +299,7 @@ function renderAllMediaDashboard(D) {
     data.forEach(function(m, i) {
       var s = m.pct >= 0 ? '+' : '';
       var c = m.pct >= 0 ? 'up' : 'down';
-      tbody.innerHTML += '<tr><td><span class="rank">' + (i + 1) + '</span></td><td class="name" onclick="scrollToTop30(this.textContent)">' + m.name + '</td><td>' + fmt(m.w1) + '원</td><td>' + fmt(m.w2) + '원</td><td><span class="badge ' + c + '">' + s + m.pct + '%</span></td></tr>';
+      tbody.innerHTML += '<tr><td><span class="rank">' + (i + 1) + '</span></td><td class="name" onclick="scrollToTop30(this.textContent, this)">' + m.name + '</td><td>' + fmt(m.w1) + '원</td><td>' + fmt(m.w2) + '원</td><td><span class="badge ' + c + '">' + s + m.pct + '%</span></td></tr>';
     });
   }
 
@@ -281,7 +313,7 @@ function renderAllMediaDashboard(D) {
   D.allMedia.forEach(function(m, i) {
     var s = m.pct >= 0 ? '+' : '';
     var c = m.pct >= 0 ? 'up' : 'down';
-    top30.innerHTML += '<tr><td><span class="rank">' + (i + 1) + '</span></td><td class="name">' + m.name + '</td><td>' + m.os + '</td><td style="font-weight:800;color:#fff">' + fmt(m.total) + '원</td><td>' + fmt(m.w1) + '원</td><td>' + fmt(m.w2) + '원</td><td><span class="badge ' + c + '">' + s + m.pct + '%</span></td></tr>';
+    top30.innerHTML += '<tr><td><span class="rank">' + (i + 1) + '</span></td><td class="name" onclick="scrollBackToSource()">' + m.name + '</td><td>' + m.os + '</td><td style="font-weight:800;color:#fff">' + fmt(m.total) + '원</td><td>' + fmt(m.w1) + '원</td><td>' + fmt(m.w2) + '원</td><td><span class="badge ' + c + '">' + s + m.pct + '%</span></td></tr>';
   });
 }
 
