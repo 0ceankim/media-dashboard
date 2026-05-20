@@ -59,20 +59,20 @@
     .btn-process { margin-top: 20px; padding: 12px 32px; border-radius: 8px; border: none; background: #6366f1; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; display: none; transition: all 0.3s; }
     .btn-process:hover { background: #4f46e5; transform: scale(1.02); }
     .status-msg { margin-top: 12px; font-size: 12px; color: #4ade80; display: none; }
-    .clear-data { display:inline-block; margin-left:8px; width:18px; height:18px; line-height:16px; text-align:center; border-radius:50%; background:rgba(248,113,113,0.15); color:#f87171; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; vertical-align:middle; }
-    .clear-data:hover { background:rgba(248,113,113,0.3); transform:scale(1.1); }
+    .clear-data { display:inline-flex; align-items:center; justify-content:center; margin-left:8px; width:18px; height:18px; border-radius:50%; background:rgba(248,113,113,0.15); color:#f87171; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; vertical-align:middle; }
+    .clear-data:hover { background:rgba(248,113,113,0.3); transform:scale(1.2); }
     /* 라이트 모드 */
     body.light { background: #f8fafc; color: #1e293b; }
     body.light .dashboard-header h1 { color: #1e293b; }
     body.light .dashboard-header p { color: #64748b; }
     body.light .kpi-card { background: #fff; border-color: #e2e8f0; }
-    body.light .kpi-card .label { color: #64748b; }
+    body.light .kpi-card .label { color: #000; }
     body.light .kpi-card .value { color: #1e293b; }
     body.light .card { background: #fff; border-color: #e2e8f0; }
     body.light .card h2 { color: #000; }
     body.light thead th { background: rgba(68,114,196,0.15); color: #000; }
-    body.light tbody td { color: #334155; border-bottom-color: #f1f5f9; }
-    body.light tbody td:first-child { color: #1e293b; }
+    body.light tbody td { color: #000; border-bottom-color: #f1f5f9; }
+    body.light tbody td:first-child { color: #000; }
     body.light tbody tr:last-child td { background: rgba(0,0,0,0.02); }
     body.light .footer { color: #94a3b8; }
     body.light .theme-toggle { border-color: #e2e8f0; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
@@ -127,14 +127,31 @@
   <div class="card"><h2>주간 비교</h2><div class="chart-wrapper"><canvas id="weeklyBar"></canvas></div></div>
 </div>
 
-<div class="footer" style="font-size:14px;">ocean.kim</div>
+<div class="footer" style="font-size:14px;">Ocean.Kim</div>
 
 <script>
 // === 데이터 삭제 ===
 function clearDashboardData() {
-  if (!confirm('업로드된 데이터를 삭제하시겠습니까?\n두 페이지 모두에서 데이터가 사라집니다.')) return;
-  localStorage.removeItem('media_dashboard_raw');
-  location.reload();
+  showConfirmModal('업로드된 데이터를 삭제하시겠습니까?', '두 페이지 모두에서 데이터가 사라집니다.', function() {
+    localStorage.removeItem('media_dashboard_raw');
+    location.reload();
+  });
+}
+
+function showConfirmModal(title, msg, onConfirm) {
+  var overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:99999;display:flex;align-items:center;justify-content:center;';
+  var box = document.createElement('div');
+  box.style.cssText = 'background:#1e293b;border:1px solid rgba(255,255,255,0.1);border-radius:16px;padding:32px;width:360px;max-width:90%;text-align:center;';
+  if (document.body.classList.contains('light')) box.style.cssText = 'background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:32px;width:360px;max-width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.15);';
+  var titleColor = document.body.classList.contains('light') ? '#1e293b' : '#fff';
+  var msgColor = document.body.classList.contains('light') ? '#64748b' : '#8892b0';
+  box.innerHTML = '<div style="font-size:16px;font-weight:800;color:' + titleColor + ';margin-bottom:8px;">' + title + '</div><div style="font-size:13px;color:' + msgColor + ';margin-bottom:24px;">' + msg + '</div><div style="display:flex;gap:12px;justify-content:center;"><button id="cfmCancel" style="padding:10px 24px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:transparent;color:#94a3b8;font-size:13px;font-weight:700;cursor:pointer;">취소</button><button id="cfmOk" style="padding:10px 24px;border-radius:8px;border:none;background:#ef4444;color:#fff;font-size:13px;font-weight:700;cursor:pointer;">삭제</button></div>';
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+  document.getElementById('cfmCancel').onclick = function() { document.body.removeChild(overlay); };
+  document.getElementById('cfmOk').onclick = function() { document.body.removeChild(overlay); onConfirm(); };
+  overlay.onclick = function(e) { if (e.target === overlay) document.body.removeChild(overlay); };
 }
 
 // === 테마 토글 ===
