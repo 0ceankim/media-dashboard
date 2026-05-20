@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -60,6 +59,8 @@
     .btn-process { margin-top: 20px; padding: 12px 32px; border-radius: 8px; border: none; background: #6366f1; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; display: none; transition: all 0.3s; }
     .btn-process:hover { background: #4f46e5; transform: scale(1.02); }
     .status-msg { margin-top: 12px; font-size: 12px; color: #4ade80; display: none; }
+    .clear-data { display:inline-block; margin-left:8px; width:18px; height:18px; line-height:16px; text-align:center; border-radius:50%; background:rgba(248,113,113,0.15); color:#f87171; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; vertical-align:middle; }
+    .clear-data:hover { background:rgba(248,113,113,0.3); transform:scale(1.1); }
     /* 라이트 모드 */
     body.light { background: #f8fafc; color: #1e293b; }
     body.light .dashboard-header h1 { color: #1e293b; }
@@ -68,8 +69,8 @@
     body.light .kpi-card .label { color: #64748b; }
     body.light .kpi-card .value { color: #1e293b; }
     body.light .card { background: #fff; border-color: #e2e8f0; }
-    body.light .card h2 { color: #475569; }
-    body.light thead th { background: rgba(68,114,196,0.15); color: #475569; }
+    body.light .card h2 { color: #000; }
+    body.light thead th { background: rgba(68,114,196,0.15); color: #000; }
     body.light tbody td { color: #334155; border-bottom-color: #f1f5f9; }
     body.light tbody td:first-child { color: #1e293b; }
     body.light tbody tr:last-child td { background: rgba(0,0,0,0.02); }
@@ -110,7 +111,7 @@
 <!-- 메인 콘텐츠 -->
 <div class="dashboard-header">
   <div style="display:inline-flex;align-items:center;gap:12px;"><h1>잼팟 & 한게임 주간 리포트</h1><span class="upload-icon" id="uploadIcon" onclick="openModal()" title="파일 업로드"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span></div>
-  <p id="headerSub"></p><p id="fileVersion" style="font-size:12px;color:#64748b;margin-top:4px;"></p>
+  <p id="headerSub"></p><p id="fileVersion" style="font-size:14px;color:#8892b0;margin-top:4px;"></p>
 </div>
 
 <div class="kpi-grid" id="kpiGrid"></div>
@@ -126,9 +127,16 @@
   <div class="card"><h2>주간 비교</h2><div class="chart-wrapper"><canvas id="weeklyBar"></canvas></div></div>
 </div>
 
-<div class="footer">ocean.kim</div>
+<div class="footer" style="font-size:14px;">ocean.kim</div>
 
 <script>
+// === 데이터 삭제 ===
+function clearDashboardData() {
+  if (!confirm('업로드된 데이터를 삭제하시겠습니까?\n두 페이지 모두에서 데이터가 사라집니다.')) return;
+  localStorage.removeItem('media_dashboard_raw');
+  location.reload();
+}
+
 // === 테마 토글 ===
 function toggleTheme() {
   document.body.classList.toggle('light');
@@ -144,101 +152,6 @@ function toggleTheme() {
 if (localStorage.getItem('theme') === 'light') {
   document.body.classList.add('light');
   document.querySelector('.theme-toggle').textContent = '\u2600';
-}
-
-// === 전처리 로직 (Python → JS 이식) ===
-const EXCLUDE_PATTERNS = ['(알파)', '(원스, 데브)', '(데브)', '(원스, 알파)'];
-
-function isTargetMedia(name) {
-  return name.includes('한게임') || name.includes('윈조이') || name.includes('WPL');
-}
-
-function cleanMediaName(name) {
-  name = name.replace(/\s*\(\d+\)\s*$/, '');
-  if (name.includes('윈조이 포커')) name = '윈조이 포커';
-  if (name.startsWith('WPL')) name = 'WPL';
-  const match = name.match(/^(.+?)\s*[:：]\s*.+?(\(원스토어\))?\s*$/);
-  if (match) {
-    name = match[1].trim() + (match[2] ? ' ' + match[2] : '');
-  }
-  return name.trim();
-}
-
-function getCompany(name) {
-  return name.includes('한게임') ? 'NHN 한게임' : '잼팟 주식회사';
-}
-
-function convertDate(dateStr) {
-  const match = String(dateStr).match(/(\d{4})-(\d{2})-(\d{2})\s*\((.)\)/);
-  if (match) return parseInt(match[2]) + '/' + parseInt(match[3]) + '(' + match[4] + ')';
-  return String(dateStr);
-}
-
-function identifyWeeks(dates) {
-  const weeks = [];
-  let weekStart = 0;
-  for (let i = 0; i < dates.length; i++) {
-    const match = dates[i].match(/\((.)\)/);
-    if (match && match[1] === '목' && i > 0) {
-      weeks.push({ start: weekStart, end: i - 1 });
-      weekStart = i;
-    }
-  }
-  weeks.push({ start: weekStart, end: dates.length - 1 });
-  return weeks;
-}
-
-function getWeekLabel(dates, week) {
-  const start = dates[week.start].replace(/\(.\)/, '').trim();
-  const end = dates[week.end].replace(/\(.\)/, '').trim();
-  return start + ' ~ ' + end;
-}
-
-function processExcel(workbook) {
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const raw = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-  
-  const header = raw[0];
-  const dataRows = raw.slice(1);
-  
-  // 연동 형태 제거 (인덱스 2)
-  header.splice(2, 1);
-  dataRows.forEach(r => r.splice(2, 1));
-  
-  // 날짜 변환
-  const dates = [];
-  for (let i = 2; i < header.length - 1; i++) {
-    header[i] = convertDate(header[i]);
-    dates.push(header[i]);
-  }
-  
-  // 필터링 + 전처리
-  const companyDaily = {};
-  dataRows.forEach(row => {
-    const mediaName = String(row[0] || '');
-    if (!isTargetMedia(mediaName)) return;
-    if (EXCLUDE_PATTERNS.some(p => mediaName.includes(p))) return;
-    
-    const cleaned = cleanMediaName(mediaName);
-    const company = getCompany(cleaned);
-    
-    if (!companyDaily[company]) companyDaily[company] = new Array(dates.length).fill(0);
-    
-    for (let i = 0; i < dates.length; i++) {
-      const val = Number(row[i + 2]) || 0;
-      companyDaily[company][i] += val;
-    }
-  });
-  
-  const weeks = identifyWeeks(dates);
-  const weekLabels = weeks.map(w => getWeekLabel(dates, w));
-  
-  return {
-    meta: { updatedAt: new Date().toISOString().split('T')[0], period: dates[0] + ' ~ ' + dates[dates.length - 1], weekCount: weeks.length },
-    dates: dates,
-    companies: companyDaily,
-    weeks: weeks.map((w, i) => ({ label: weekLabels[i], start: w.start, end: w.end }))
-  };
 }
 
 // === 업로드 UI ===
@@ -309,7 +222,7 @@ function renderDashboard(D) {
   function weekTotal(data, week) { return sum(data.slice(week.start, week.end + 1)); }
   
   document.getElementById('headerSub').textContent = '기간: ' + D.meta.period;
-  document.getElementById('fileVersion').textContent = D.meta.fileName ? '최종 업로드 파일 : ' + D.meta.fileName : '';
+  document.getElementById('fileVersion').innerHTML = D.meta.fileName ? '업로드 파일: ' + D.meta.fileName + ' <span class="clear-data" onclick="clearDashboardData()" title="데이터 삭제">&times;</span>' : '';
   // fileVersion은 별도 처리
   
   const lastWeek = weeks[weeks.length - 1];
