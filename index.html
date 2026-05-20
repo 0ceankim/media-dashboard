@@ -19,6 +19,9 @@
     .kpi-box { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 20px; text-align: center; }
     .kpi-box .label { font-size: 14px; color: #d1d5db; font-weight: 700; }
     .kpi-box .value { font-size: 26px; font-weight: 800; color: #fff; display: inline; }
+    .clear-data { display:inline-block; margin-left:8px; width:18px; height:18px; line-height:16px; text-align:center; border-radius:50%; background:rgba(248,113,113,0.15); color:#f87171; font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s; vertical-align:middle; }
+    .clear-data:hover { background:rgba(248,113,113,0.3); transform:scale(1.1); }
+    .kpi-box .wow { font-size: 16px; font-weight: 700; }
     .kpi-box .value.up { color: #4ade80 !important; }
     .kpi-box .value.down { color: #f87171 !important; }
     .up { color: #4ade80; }
@@ -68,10 +71,10 @@
     body.light .kpi-box .label { color: #64748b; }
     body.light .kpi-box .value { color: #1e293b; }
     body.light .card { background: #fff; border-color: #e2e8f0; }
-    body.light .card h3 { color: #475569; }
-    body.light .section-title { color: #1e293b; }
+    body.light .card h3 { color: #000; }
+    body.light .section-title { color: #000; }
     body.light .section-sub { color: #94a3b8; }
-    body.light th { color: #475569; border-bottom-color: #e2e8f0; }
+    body.light th { color: #000; border-bottom-color: #e2e8f0; }
     body.light td { color: #334155; border-bottom-color: #f1f5f9; }
     body.light td.name { color: #1e293b; }
     body.light td.highlight-up { color: #16a34a; }
@@ -125,7 +128,7 @@
     </span>
   </div>
   <p id="headerPeriod"></p>
-  <p id="fileVersion" style="font-size:12px;color:#64748b;margin-top:4px;"></p>
+  <p id="fileVersion" style="font-size:14px;color:#8892b0;margin-top:4px;"></p>
 </div>
 
 <div class="kpi-grid" id="kpiGrid"></div>
@@ -153,8 +156,15 @@
   <div class="card"><table class="table-top30" style="table-layout:fixed"><colgroup><col style="width:100px"><col><col style="width:180px"><col style="width:280px"><col style="width:280px"><col style="width:280px"><col style="width:180px"></colgroup><thead><tr><th>#</th><th>매체</th><th>OS</th><th>합계</th><th>W1</th><th>W2</th><th>WoW</th></tr></thead><tbody id="top30Body"></tbody></table></div>
 </div>
 
-<div style="text-align:center; margin-top:60px; font-size:11px; color:#4a5568;">ocean.kim</div>
+<div style="text-align:center; margin-top:60px; font-size:14px; color:#64748b;">ocean.kim</div>
 <script>
+// === 데이터 삭제 ===
+function clearDashboardData() {
+  if (!confirm('업로드된 데이터를 삭제하시겠습니까?\n두 페이지 모두에서 데이터가 사라집니다.')) return;
+  localStorage.removeItem('media_dashboard_raw');
+  location.reload();
+}
+
 function toggleTheme() {
   document.body.classList.toggle('light');
   var icon = document.querySelector('.theme-toggle');
@@ -235,12 +245,12 @@ function renderAllMediaDashboard(D) {
   var sign = parseFloat(totalWow) >= 0 ? '+' : '';
 
   document.getElementById('headerPeriod').textContent = '기간: ' + D.meta.period + ' | ' + D.meta.mediaCount + '개 매체';
-  document.getElementById('fileVersion').textContent = D.meta.fileName ? '최종 업로드 파일 : ' + D.meta.fileName : '';
+  document.getElementById('fileVersion').innerHTML = D.meta.fileName ? '업로드 파일: ' + D.meta.fileName + ' <span class="clear-data" onclick="clearDashboardData()" title="데이터 삭제">&times;</span>' : '';
 
   document.getElementById('kpiGrid').innerHTML =
     '<div class="kpi-box"><div class="label">전체 매체비 (W1)</div><div style="margin:8px 0 4px;"><span class="value">' + fmt(D.total.w1) + '원</span></div></div>' +
     '<div class="kpi-box"><div class="label">전체 매체비 (W2)</div><div style="margin:8px 0 4px;"><span class="value">' + fmt(D.total.w2) + '원</span></div></div>' +
-    '<div class="kpi-box"><div class="label">WoW</div><div style="margin:8px 0 4px;"><span class="value ' + cls + '">' + (totalDiff >= 0 ? '+' : '') + fmt(totalDiff) + '원 (' + sign + totalWow + '%)</span></div></div>';
+    '<div class="kpi-box"><div class="label">WoW</div><div style="margin:8px 0 4px;"><span class="value ' + cls + '">' + (totalDiff >= 0 ? '+' : '') + fmt(totalDiff) + '원</span> <span class="wow ' + cls + '">(' + sign + totalWow + '%)</span></div></div>';
 
   function renderDiffTable(id, data) {
     var tbody = document.getElementById(id);
