@@ -14,7 +14,7 @@
     body { font-family: 'Nanum Gothic', sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #e0e0e0; padding: 32px; min-height: 100vh; }
     .dashboard-header { text-align: center; margin-bottom: 40px; position: relative; }
     .dashboard-header h1 { font-size: 32px; font-weight: 800; color: #fff; display: inline-block; }
-    .upload-icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 8px; background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4); cursor: pointer; color: #a5b4fc; transition: all 0.3s;  }
+    .upload-icon { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; position: relative; top: -2px; border-radius: 8px; background: rgba(99,102,241,0.2); border: 1px solid rgba(99,102,241,0.4); cursor: pointer; color: #a5b4fc; transition: all 0.3s;  }
     .upload-icon:hover { background: rgba(99,102,241,0.4); transform: scale(1.1); }
     .dashboard-header p { font-size: 14px; color: #8892b0; margin-top: 8px; }
     .kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
@@ -331,9 +331,9 @@ function renderDashboard(D) {
     if (detailBody) {
       detailBody.innerHTML = '';
       D.mediaDetail.forEach(function(m, i) {
-        var s = m.pct >= 0 ? '+' : '';
-        var c = m.pct >= 0 ? 'wow-up' : 'wow-down';
-        detailBody.innerHTML += '<tr><td style="text-align:center;"><span style="display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:4px;font-size:10px;font-weight:800;background:rgba(99,102,241,0.2);color:#a5b4fc;">' + (i + 1) + '</span></td><td style="text-align:left;font-size:12px;color:#94a3b8;">' + (m.company || '') + '</td><td style="text-align:left;font-weight:700;color:#fff;">' + m.name + '</td><td>' + m.os + '</td><td style="font-weight:800;color:#fff;">' + fmt(m.total) + '원</td><td>' + fmt(m.w1) + '원</td><td>' + fmt(m.w2) + '원</td><td class="' + c + '">' + s + m.pct + '%</td></tr>';
+        var sign = m.pct >= 0 ? '+' : '';
+        var cls = m.pct >= 0 ? 'wow-up' : 'wow-down';
+        detailBody.innerHTML += '<tr><td style="text-align:center;"><span style="display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:4px;font-size:10px;font-weight:800;background:rgba(99,102,241,0.2);color:#a5b4fc;">' + (i + 1) + '</span></td><td style="text-align:left;font-size:12px;color:#94a3b8;">' + (m.company || '') + '</td><td style="text-align:left;font-weight:700;color:#fff;">' + m.name + '</td><td>' + m.os + '</td><td style="font-weight:800;color:#fff;">' + fmt(m.total) + '원</td><td>' + fmt(m.w1) + '원</td><td>' + fmt(m.w2) + '원</td><td class="' + cls + '">' + sign + m.pct + '%</td></tr>';
       });
     }
   }
