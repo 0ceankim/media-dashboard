@@ -81,6 +81,11 @@
     body.light .modal h2 { color: #1e293b; }
     body.light .modal p { color: #64748b; }
     body.light .upload-icon { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3); }
+    .detail-filter { padding:6px 12px; border-radius:6px; border:1px solid rgba(255,255,255,0.15); background:#1e293b; color:#ccc; font-size:12px; font-family:inherit; cursor:pointer; -webkit-appearance:none; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; padding-right:28px; }
+    .detail-filter option { background:#1e293b; color:#ccc; }
+    .detail-filter:focus { outline:none; border-color:rgba(99,102,241,0.5); }
+    body.light .detail-filter { background:#fff; color:#334155; border-color:#e2e8f0; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 8px center; }
+    body.light .detail-filter option { background:#fff; color:#334155; }
   </style>
 </head>
 <body>
@@ -123,19 +128,16 @@
 
 <div class="section"><div class="card"><h2>일별 매체비 추이 (이중 축)</h2><div class="chart-wrapper tall"><canvas id="mainChart"></canvas></div></div></div>
 
-<div class="chart-grid">
-  <div class="card"><h2>요일별 평균 매체비</h2><div class="chart-wrapper"><canvas id="dowChart"></canvas></div></div>
-  <div class="card"><h2>주간 비교</h2><div class="chart-wrapper"><canvas id="weeklyBar"></canvas></div></div>
-</div>
+
 
 
 <div class="section" style="margin-top:32px;">
   <div class="card">
     <h2>매체별 상세 (2주 합산)</h2>
     <div id="detailFilters" style="display:none;margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;">
-      <select id="filterCompany" onchange="applyDetailFilters()" style="padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#ccc;font-size:12px;font-family:inherit;"><option value="">전체 회사</option></select>
-      <select id="filterMedia" onchange="applyDetailFilters()" style="padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#ccc;font-size:12px;font-family:inherit;"><option value="">전체 매체</option></select>
-      <select id="filterOS" onchange="applyDetailFilters()" style="padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#ccc;font-size:12px;font-family:inherit;"><option value="">전체 OS</option></select>
+      <select id="filterCompany" onchange="applyDetailFilters()" class="detail-filter"><option value="">전체 회사</option></select>
+      <select id="filterMedia" onchange="applyDetailFilters()" class="detail-filter"><option value="">전체 매체</option></select>
+      <select id="filterOS" onchange="applyDetailFilters()" class="detail-filter"><option value="">전체 OS</option></select>
     </div>
     <div style="overflow-x:auto;">
       <table class="detail-table" style="table-layout:fixed;min-width:900px;">
@@ -324,20 +326,7 @@ function renderDashboard(D) {
   const c1 = new Chart(document.getElementById('mainChart'), { type: 'line', data: { labels: dates, datasets: datasets }, options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false }, plugins: { legend: { position: 'top', labels: { color: '#ccc', font: { size: 13 }, padding: 16, usePointStyle: true } }, tooltip: { backgroundColor: 'rgba(20,20,40,0.95)', titleColor: '#fff', bodyColor: '#ccc', padding: 14, cornerRadius: 8, callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() + '원' } }, annotation: { annotations: annotations } }, scales: { x: { ticks: { color: '#8892b0', font: { size: 11, weight: 'bold' } }, grid: { color: 'rgba(255,255,255,0.03)' } }, y: { position: 'left', min: y0.min, max: y0.max, ticks: { color: colors[0], font: { size: 11, weight: 'bold' }, callback: v => (v / 10000).toFixed(0) + '만' }, grid: { color: 'rgba(128,128,128,0.2)' }, title: { display: true, text: companyNames[0], color: colors[0], font: { size: 12, weight: 'bold' } } }, y1: { position: 'right', min: y1r.min, max: y1r.max, ticks: { color: colors[1], font: { size: 11, weight: 'bold' }, callback: v => (v / 10000).toFixed(0) + '만' }, grid: { drawOnChartArea: false }, title: { display: true, text: companyNames[1] || '', color: colors[1], font: { size: 12, weight: 'bold' } } } } } });
   chartInstances.push(c1);
   
-  // 요일별
-  const dows = ['목', '금', '토', '일', '월', '화', '수'];
-  const dowDs = companyNames.map((name, i) => { const data = companies[name]; const avg = dows.map((d, di) => { let t = 0, c = 0; weeks.forEach(w => { const idx = w.start + di; if (idx <= w.end) { t += data[idx]; c++; } }); return Math.round(t / c); }); const bg = ['rgba(96,165,250,0.7)', 'rgba(251,146,60,0.7)', 'rgba(74,222,128,0.7)']; return { label: name, data: avg, backgroundColor: bg[i] || 'rgba(167,139,250,0.7)', borderRadius: 6 }; });
-  const c2 = new Chart(document.getElementById('dowChart'), { type: 'bar', data: { labels: dows, datasets: dowDs }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top', labels: { color: '#ccc', font: { size: 11 }, usePointStyle: true } }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() + '원' } } }, scales: { x: { ticks: { color: '#8892b0', font: { size: 12, weight: 'bold' } }, grid: { display: false } }, y: { ticks: { color: '#8892b0', callback: v => (v / 10000).toFixed(0) + '만' }, grid: { color: 'rgba(255,255,255,0.05)' } } } } });
-  chartInstances.push(c2);
-  
-  // 주간 비교
-  if (weeks.length >= 2) {
-    const labels = companyNames.concat(['잼팟 & 한게임']);
-    const w1D = companyNames.map(n => weekTotal(companies[n], prevWeek)); w1D.push(tPrev);
-    const w2D = companyNames.map(n => weekTotal(companies[n], lastWeek)); w2D.push(tCurr);
-    const c3 = new Chart(document.getElementById('weeklyBar'), { type: 'bar', data: { labels: labels, datasets: [{ label: prevWeek.label, data: w1D, backgroundColor: 'rgba(148,163,184,0.5)', borderRadius: 6 }, { label: lastWeek.label, data: w2D, backgroundColor: 'rgba(192,132,252,0.7)', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { position: 'top', labels: { color: '#ccc', font: { size: 11 }, usePointStyle: true } }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.x.toLocaleString() + '원' } } }, scales: { x: { ticks: { color: '#8892b0', callback: v => (v / 10000).toFixed(0) + '만' }, grid: { color: 'rgba(255,255,255,0.05)' } }, y: { ticks: { color: '#ccc', font: { size: 12, weight: 'bold' } }, grid: { display: false } } } } });
-    chartInstances.push(c3);
-  }
+
 
   // 매체별 상세 표
   if (D.mediaDetail && D.mediaDetail.length > 0) {
