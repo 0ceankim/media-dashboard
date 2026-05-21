@@ -128,6 +128,20 @@
   <div class="card"><h2>주간 비교</h2><div class="chart-wrapper"><canvas id="weeklyBar"></canvas></div></div>
 </div>
 
+
+<div class="section" style="margin-top:32px;">
+  <div class="card">
+    <h2>매체별 상세 (2주 합산)</h2>
+    <div style="overflow-x:auto;">
+      <table class="detail-table" style="table-layout:fixed;min-width:800px;">
+        <colgroup><col style="width:50px"><col><col style="width:100px"><col style="width:160px"><col style="width:160px"><col style="width:160px"><col style="width:100px"></colgroup>
+        <thead><tr><th>#</th><th>매체</th><th>OS</th><th>합계</th><th>W1</th><th>W2</th><th>WoW</th></tr></thead>
+        <tbody id="mediaDetailBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <div class="footer" style="font-size:14px;">Ocean.Kim</div>
 
 <script>
@@ -309,6 +323,19 @@ function renderDashboard(D) {
     const w2D = companyNames.map(n => weekTotal(companies[n], lastWeek)); w2D.push(tCurr);
     const c3 = new Chart(document.getElementById('weeklyBar'), { type: 'bar', data: { labels: labels, datasets: [{ label: prevWeek.label, data: w1D, backgroundColor: 'rgba(148,163,184,0.5)', borderRadius: 6 }, { label: lastWeek.label, data: w2D, backgroundColor: 'rgba(192,132,252,0.7)', borderRadius: 6 }] }, options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { position: 'top', labels: { color: '#ccc', font: { size: 11 }, usePointStyle: true } }, tooltip: { callbacks: { label: ctx => ctx.dataset.label + ': ' + ctx.parsed.x.toLocaleString() + '원' } } }, scales: { x: { ticks: { color: '#8892b0', callback: v => (v / 10000).toFixed(0) + '만' }, grid: { color: 'rgba(255,255,255,0.05)' } }, y: { ticks: { color: '#ccc', font: { size: 12, weight: 'bold' } }, grid: { display: false } } } } });
     chartInstances.push(c3);
+  }
+
+  // 매체별 상세 표
+  if (D.mediaDetail && D.mediaDetail.length > 0) {
+    var detailBody = document.getElementById('mediaDetailBody');
+    if (detailBody) {
+      detailBody.innerHTML = '';
+      D.mediaDetail.forEach(function(m, i) {
+        var s = m.pct >= 0 ? '+' : '';
+        var c = m.pct >= 0 ? 'wow-up' : 'wow-down';
+        detailBody.innerHTML += '<tr><td style="text-align:center;"><span style="display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:4px;font-size:10px;font-weight:800;background:rgba(99,102,241,0.2);color:#a5b4fc;">' + (i + 1) + '</span></td><td style="text-align:left;font-weight:700;color:#fff;">' + m.name + '</td><td>' + m.os + '</td><td style="font-weight:800;color:#fff;">' + fmt(m.total) + '원</td><td>' + fmt(m.w1) + '원</td><td>' + fmt(m.w2) + '원</td><td class="' + c + '">' + s + m.pct + '%</td></tr>';
+      });
+    }
   }
 }
 
