@@ -155,6 +155,27 @@ function processForGophoryu(rawData) {
     }
   });
   
+  // 개별 매체 리스트 (회사별 합산이 아닌 매체별)
+  const lastWeek = slicedWeeks[slicedWeeks.length - 1];
+  const prevWeek = slicedWeeks.length >= 2 ? slicedWeeks[slicedWeeks.length - 2] : null;
+  const mediaDetail = [];
+  allMedia.forEach(m => {
+    if (!isTargetMedia(m.name)) return;
+    if (EXCLUDE_PATTERNS.some(p => m.name.includes(p))) return;
+    const daily = [];
+    for (let i = 0; i < slicedDates.length; i++) {
+      daily.push(m.daily[last2WeeksStart + i]);
+    }
+    const w1 = prevWeek ? daily.slice(prevWeek.start, prevWeek.end + 1).reduce((a, b) => a + b, 0) : 0;
+    const w2 = daily.slice(lastWeek.start, lastWeek.end + 1).reduce((a, b) => a + b, 0);
+    const total = w1 + w2;
+    if (total > 0) {
+      const pct = w1 > 0 ? Math.round((w2 - w1) / w1 * 1000) / 10 : (w2 > 0 ? 999.9 : 0);
+      mediaDetail.push({ company: getCompany(m.name), name: cleanMediaName(m.name), os: m.os, w1, w2, total, diff: w2 - w1, pct });
+    }
+  });
+  mediaDetail.sort((a, b) => b.total - a.total);
+
   return {
     meta: {
       updatedAt: new Date().toISOString().split('T')[0],
@@ -163,7 +184,8 @@ function processForGophoryu(rawData) {
     },
     dates: slicedDates,
     companies: companyDaily,
-    weeks: slicedWeeks.map(w => ({ label: getWeekLabel(slicedDates, w), start: w.start, end: w.end }))
+    weeks: slicedWeeks.map(w => ({ label: getWeekLabel(slicedDates, w), start: w.start, end: w.end })),
+    mediaDetail: mediaDetail
   };
 }
 
