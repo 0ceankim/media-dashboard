@@ -132,10 +132,24 @@
 <div class="section" style="margin-top:32px;">
   <div class="card">
     <h2>매체별 상세 (2주 합산)</h2>
+    <div id="detailFilters" style="display:none;margin-bottom:16px;display:flex;gap:12px;flex-wrap:wrap;">
+      <select id="filterCompany" onchange="applyDetailFilters()" style="padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#ccc;font-size:12px;font-family:inherit;"><option value="">전체 회사</option></select>
+      <select id="filterMedia" onchange="applyDetailFilters()" style="padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#ccc;font-size:12px;font-family:inherit;"><option value="">전체 매체</option></select>
+      <select id="filterOS" onchange="applyDetailFilters()" style="padding:6px 12px;border-radius:6px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:#ccc;font-size:12px;font-family:inherit;"><option value="">전체 OS</option></select>
+    </div>
     <div style="overflow-x:auto;">
       <table class="detail-table" style="table-layout:fixed;min-width:900px;">
         <colgroup><col style="width:50px"><col style="width:120px"><col><col style="width:90px"><col style="width:150px"><col style="width:150px"><col style="width:150px"><col style="width:90px"></colgroup>
-        <thead><tr><th>#</th><th>회사</th><th>매체</th><th>OS</th><th>합계</th><th>W1</th><th>W2</th><th>WoW</th></tr></thead>
+        <thead><tr>
+          <th style="text-align:center">#</th>
+          <th style="text-align:left">회사</th>
+          <th style="text-align:left">매체</th>
+          <th style="text-align:right">OS</th>
+          <th style="text-align:right;cursor:pointer;" onclick="sortDetail('total')">합계 <span id="sortTotal">▼</span></th>
+          <th style="text-align:right;cursor:pointer;" onclick="sortDetail('w1')">W1 <span id="sortW1"></span></th>
+          <th style="text-align:right;cursor:pointer;" onclick="sortDetail('w2')">W2 <span id="sortW2"></span></th>
+          <th style="text-align:right;cursor:pointer;" onclick="sortDetail('pct')">WoW <span id="sortPct"></span></th>
+        </tr></thead>
         <tbody id="mediaDetailBody"></tbody>
       </table>
     </div>
@@ -327,16 +341,74 @@ function renderDashboard(D) {
 
   // 매체별 상세 표
   if (D.mediaDetail && D.mediaDetail.length > 0) {
-    var detailBody = document.getElementById('mediaDetailBody');
-    if (detailBody) {
-      detailBody.innerHTML = '';
-      D.mediaDetail.forEach(function(m, i) {
-        var sign = m.pct >= 0 ? '+' : '';
-        var cls = m.pct >= 0 ? 'wow-up' : 'wow-down';
-        detailBody.innerHTML += '<tr><td style="text-align:center;"><span style="display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:4px;font-size:10px;font-weight:800;background:rgba(99,102,241,0.2);color:#a5b4fc;">' + (i + 1) + '</span></td><td style="text-align:left;font-size:12px;color:#94a3b8;">' + (m.company || '') + '</td><td style="text-align:left;font-weight:700;color:#fff;">' + m.name + '</td><td>' + m.os + '</td><td style="font-weight:800;color:#fff;">' + fmt(m.total) + '원</td><td>' + fmt(m.w1) + '원</td><td>' + fmt(m.w2) + '원</td><td class="' + cls + '">' + sign + m.pct + '%</td></tr>';
-      });
-    }
+    window._mediaDetailData = D.mediaDetail;
+    window._mediaDetailSort = { key: 'total', dir: 'desc' };
+    initDetailFilters(D.mediaDetail);
+    renderDetailTable(D.mediaDetail);
   }
+}
+
+
+// === 매체별 상세 필터/정렬 ===
+function initDetailFilters(data) {
+  var companies = [...new Set(data.map(function(m){return m.company||'';}))].sort();
+  var medias = [...new Set(data.map(function(m){return m.name;}))].sort();
+  var oses = [...new Set(data.map(function(m){return m.os;}))].sort();
+  
+  var fc = document.getElementById('filterCompany');
+  var fm = document.getElementById('filterMedia');
+  var fo = document.getElementById('filterOS');
+  
+  fc.innerHTML = '<option value="">전체 회사</option>';
+  companies.forEach(function(v){fc.innerHTML += '<option value="'+v+'">'+v+'</option>';});
+  fm.innerHTML = '<option value="">전체 매체</option>';
+  medias.forEach(function(v){fm.innerHTML += '<option value="'+v+'">'+v+'</option>';});
+  fo.innerHTML = '<option value="">전체 OS</option>';
+  oses.forEach(function(v){fo.innerHTML += '<option value="'+v+'">'+v+'</option>';});
+  
+  document.getElementById('detailFilters').style.display = 'flex';
+}
+
+function applyDetailFilters() {
+  var fc = document.getElementById('filterCompany').value;
+  var fm = document.getElementById('filterMedia').value;
+  var fo = document.getElementById('filterOS').value;
+  var filtered = window._mediaDetailData.filter(function(m) {
+    if (fc && (m.company||'') !== fc) return false;
+    if (fm && m.name !== fm) return false;
+    if (fo && m.os !== fo) return false;
+    return true;
+  });
+  var s = window._mediaDetailSort;
+  filtered.sort(function(a,b){ var v = s.dir==='desc' ? b[s.key]-a[s.key] : a[s.key]-b[s.key]; return v; });
+  renderDetailTable(filtered);
+}
+
+function sortDetail(key) {
+  var s = window._mediaDetailSort;
+  if (s.key === key) { s.dir = s.dir === 'desc' ? 'asc' : 'desc'; }
+  else { s.key = key; s.dir = 'desc'; }
+  // 화살표 업데이트
+  ['Total','W1','W2','Pct'].forEach(function(k){
+    var el = document.getElementById('sort'+k);
+    if(el) el.textContent = '';
+  });
+  var id = 'sort' + key.charAt(0).toUpperCase() + key.slice(1);
+  var el = document.getElementById(id);
+  if(el) el.textContent = s.dir === 'desc' ? '▼' : '▲';
+  applyDetailFilters();
+}
+
+function renderDetailTable(data) {
+  var fmt = function(n){return n.toLocaleString('ko-KR');};
+  var tbody = document.getElementById('mediaDetailBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  data.forEach(function(m, i) {
+    var sign = m.pct >= 0 ? '+' : '';
+    var cls = m.pct >= 0 ? 'wow-up' : 'wow-down';
+    tbody.innerHTML += '<tr><td style="text-align:center;"><span style="display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:4px;font-size:10px;font-weight:800;background:rgba(99,102,241,0.2);color:#a5b4fc;">' + (i + 1) + '</span></td><td style="text-align:left;font-size:12px;color:#94a3b8;">' + (m.company || '') + '</td><td style="text-align:left;font-weight:700;color:#fff;">' + m.name + '</td><td style="text-align:right;">' + m.os + '</td><td style="text-align:right;font-weight:800;color:#fff;">' + fmt(m.total) + '원</td><td style="text-align:right;">' + fmt(m.w1) + '원</td><td style="text-align:right;">' + fmt(m.w2) + '원</td><td style="text-align:right;" class="' + cls + '">' + sign + m.pct + '%</td></tr>';
+  });
 }
 
 // === 초기 로드: localStorage에서 데이터 복원 ===
