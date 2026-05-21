@@ -133,9 +133,9 @@
   <div class="card">
     <h2>매체별 상세 (2주 합산)</h2>
     <div style="overflow-x:auto;">
-      <table class="detail-table" style="table-layout:fixed;min-width:800px;">
-        <colgroup><col style="width:50px"><col><col style="width:100px"><col style="width:160px"><col style="width:160px"><col style="width:160px"><col style="width:100px"></colgroup>
-        <thead><tr><th>#</th><th>매체</th><th>OS</th><th>합계</th><th>W1</th><th>W2</th><th>WoW</th></tr></thead>
+      <table class="detail-table" style="table-layout:fixed;min-width:900px;">
+        <colgroup><col style="width:50px"><col style="width:120px"><col><col style="width:90px"><col style="width:150px"><col style="width:150px"><col style="width:150px"><col style="width:90px"></colgroup>
+        <thead><tr><th>#</th><th>회사</th><th>매체</th><th>OS</th><th>합계</th><th>W1</th><th>W2</th><th>WoW</th></tr></thead>
         <tbody id="mediaDetailBody"></tbody>
       </table>
     </div>
@@ -333,7 +333,7 @@ function renderDashboard(D) {
       D.mediaDetail.forEach(function(m, i) {
         var s = m.pct >= 0 ? '+' : '';
         var c = m.pct >= 0 ? 'wow-up' : 'wow-down';
-        detailBody.innerHTML += '<tr><td style="text-align:center;"><span style="display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:4px;font-size:10px;font-weight:800;background:rgba(99,102,241,0.2);color:#a5b4fc;">' + (i + 1) + '</span></td><td style="text-align:left;font-weight:700;color:#fff;">' + m.name + '</td><td>' + m.os + '</td><td style="font-weight:800;color:#fff;">' + fmt(m.total) + '원</td><td>' + fmt(m.w1) + '원</td><td>' + fmt(m.w2) + '원</td><td class="' + c + '">' + s + m.pct + '%</td></tr>';
+        detailBody.innerHTML += '<tr><td style="text-align:center;"><span style="display:inline-block;width:20px;height:20px;line-height:20px;text-align:center;border-radius:4px;font-size:10px;font-weight:800;background:rgba(99,102,241,0.2);color:#a5b4fc;">' + (i + 1) + '</span></td><td style="text-align:left;font-size:12px;color:#94a3b8;">' + (m.company || '') + '</td><td style="text-align:left;font-weight:700;color:#fff;">' + m.name + '</td><td>' + m.os + '</td><td style="font-weight:800;color:#fff;">' + fmt(m.total) + '원</td><td>' + fmt(m.w1) + '원</td><td>' + fmt(m.w2) + '원</td><td class="' + c + '">' + s + m.pct + '%</td></tr>';
       });
     }
   }
